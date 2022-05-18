@@ -14,8 +14,8 @@ discription of the 14 dimensions:
 		Categories: ["boy","girl"](string), 
 		Description: Describes us if the student is male or fmale.
 2. Age: 
-		type: Numeric, 
-		Range: [1-5,11-15,16-20,21-25,26-30](int),  
+		type: Categorical, 
+		Range: [1-5,11-15,16-20,21-25,26-30](String),  
 		Description: Describes the age of the student.
 3. Education Level: 
 		type: Categorical, 
@@ -50,8 +50,8 @@ discription of the 14 dimensions:
 		Categories: ["4G", "3G"](String), 
 		Description: Describes the generation of the network the srudent uses.
 11. Class Duration: 
-		type: Numeric, 
-		Range: [0, 1-3,3-6](int),  
+		type: Categorical, 
+		Range: [0, 1-3,3-6](String),  
 		Description: Describes the duration of the class taken.
 12. Self Lms: 
 		type: Categorical, 
