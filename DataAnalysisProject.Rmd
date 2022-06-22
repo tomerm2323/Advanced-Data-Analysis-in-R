@@ -1,0 +1,242 @@
+---
+title: "Project Analysis Code"
+author: "Z - Tomer meshulam & Shimon Peretz"
+output: pdf_document
+---
+
+```{r load-packages, message = FALSE}
+library(knitr)
+library(tidyverse)
+library(broom)
+library(htmltools)
+library('DescTools')
+library("ggplot2")
+library(reshape)
+```
+
+```{r setup, include = FALSE}
+opts_chunk$set(echo=FALSE) # hide source code in the document
+```
+# 1. Data
+## Importing and showcasing the data
+```{r Data import}
+students_adp = read.csv(file = 'data/students_adaptability_level_online_education.csv')
+summary(students_adp)
+```
+
+```{r echo=FALSE}
+glimpse(students_adp)
+```
+# 2. Preliminary results & Data preprocessing
+  - Convert categorical variables to numeric:
+  - Union of categories
+  - Handling null values
+```{r , echo=FALSE}
+students_adp$Age = factor(students_adp$Age, 
+                              levels=c("1-5","6-10","11-15","16-20","21-25","26-30"),
+                              labels=c("baby","kids", "teens", "adults", "adults", "adults"))
+students_adp$Age = as.numeric(factor(students_adp$Age, 
+                              levels=c("baby","kids","teens","adults"),
+                              labels=c(1,2, 3, 4)))
+students_adp = filter(students_adp, students_adp$Age != 1)
+
+students_adp$Network.Type = factor(students_adp$Network.Type,
+                            levels=c("2G", "3G", "4G"), labels=c("slow","slow","fast"))
+students_adp$Network.Type = as.numeric(factor(students_adp$Network.Type,
+                            levels=c("slow", "fast"), labels=c(1,2)))
+
+students_adp$Education.Level = factor(students_adp$Education.Level,
+                              levels=c("University", "College","School"),
+                              labels=c("Academic", "Academic","Elementry"))
+students_adp$Education.Level = as.numeric(factor(students_adp$Education.Level,
+                              levels=c("Academic","Elementry"),
+                              labels=c(1,2)))
+students_adp$Gender = as.numeric(factor(students_adp$Gender, levels=c("Boy", 
+                      "Girl"), labels=c(1,2)))
+students_adp$Institution.Type = as.numeric(factor(students_adp$Institution.Type,
+                                levels=c("Government", "Non Government"), labels=c(1,2)))
+students_adp$IT.Student = as.numeric(factor(students_adp$IT.Student, 
+                          levels=c("Yes", "No"), labels=c(1,0)))
+students_adp$Location = as.numeric(factor(students_adp$Location,
+                        levels=c("Yes", "No"), labels=c(1,0)))
+students_adp$Load.shedding = as.numeric(factor(students_adp$Load.shedding,
+                             levels=c("Low", "Med", "High"), labels=c(1,2,3)))
+students_adp$Financial.Condition = as.numeric(factor(students_adp$Financial.Condition,
+                             levels=c("Poor", "Mid", "Rich"), labels=c(1,2,3)))
+students_adp$Internet.Type = as.numeric(factor(students_adp$Internet.Type,
+                           levels=c("Wifi", "Mobile Data"), labels=c(1,2)))
+students_adp$Self.Lms = as.numeric(factor(students_adp$Self.Lms, 
+                        levels=c("Yes", "No"), labels=c(1,0)))
+students_adp$Device = as.numeric(factor(students_adp$Device,
+                      levels=c("Mobile", "Computer", "Tab"), labels=c(1,2, 3)))
+students_adp$Adaptivity.Level = as.numeric(factor(students_adp$Adaptivity.Level,
+                                levels=c("Low", "Moderate", "High"),
+                                labels=c(1,2, 3)))
+students_adp$Class.Duration = as.numeric(factor(students_adp$Class.Duration,
+                              levels=c("0", "1-3","3-6"), labels=c(1,2, 3)))
+```
+```{r}
+students_adp_nna = drop_na(students_adp)
+summary(students_adp_nna)
+```
+
+# 3. Data Analysis
+## Correlation between the variables of the data-set to the adaptation level
+
+```{r}
+res = cor(students_adp_nna)
+res
+res_df = melt(res)
+```
+```{r}
+
+ggplot(res_df, aes(x=X2, y=X1, fill=value)) + geom_tile() + 
+  scale_fill_gradient(low = "yellow", high = "red") +
+  theme(axis.title = element_blank() ,axis.text.x = element_text(angle = 45, hjust =1))
+
+```
+
+## Further-More, we want to see if those important variables are independent:
+## we will do that by executing a Chi-square test of independence on each pair.
+
+Tests Features:  
+- Significance level (alpha) to: 0.01  
+- Null and Alternative Hypotheses:  
+* H0: the variables are independent, there is no relationship between the two categorical variables.   
+* H1: the variables are dependent, there is a relationship between the two categorical variables.
+  
+First test: Institution Type and Financial Condition  
+- p-value:
+```{r , echo=FALSE}
+itype_fcond = chisq.test(table(students_adp$Institution.Type,students_adp$Financial.Condition))
+itype_fcond$p.value
+```
+Conclusion: the p-value of the test is Greater-Then the Significance Level
+            there for we will reject the Null hypotheses, 
+            Institution Type and Financial Condition are dependent
+
+Second test: Institution Type and Class Duration  
+- p-value:
+```{r , echo=FALSE}
+itype_cduration = chisq.test(table(students_adp$Institution.Type,students_adp$Class.Duration))
+itype_cduration$p.value
+```
+Conclusion: the p-value of the test is Less-Then the Significance Level
+            there for we will accept the Null hypotheses, 
+            Institution Type and Class Duration are independent
+            
+Third test: Class Duration and Financial Condition  
+- p-value:
+```{r , echo=FALSE}
+cduration_fcond = chisq.test(table(students_adp$Class.Duration,students_adp$Financial.Condition))
+cduration_fcond$p.value
+```
+Conclusion: the p-value of the test is Less-Then the Significance Level
+            there for we will accept the Null hypotheses, 
+            Class Duration and Financial Condition are independent
+            
+Fourth test: Network Type and Financial Condition  
+- p-value:
+```{r , echo=FALSE}
+nType_fCond = chisq.test(table(students_adp$Network.Type,students_adp$Financial.Condition))
+nType_fCond$p.value
+```
+Conclusion: the p-value of the test is Less-Then the Significance Level
+            there for we will accept the Null hypotheses, 
+            Class Duration and Financial Condition are independent
+            
+## Hypotheses test for mean diffrences between categories inside relevent variables
+```{r}
+hour = filter(students_adp_nna, students_adp_nna$Class.Duration == 1)
+three_hours = filter(students_adp_nna, students_adp_nna$Class.Duration == 2)
+six_hours = filter(students_adp_nna, students_adp_nna$Class.Duration == 3)
+
+t.test(hour, three_hours)
+t.test(hour, six_hours)
+t.test(three_hours, six_hours)
+
+slow = filter(students_adp_nna, students_adp_nna$Network.Type == 1)
+fast = filter(students_adp_nna, students_adp_nna$Network.Type == 2)
+
+t.test(slow, fast)
+```
+## Relevant graphs for  investigate on a high-level the relationship between those variables
+and their Adaptivity Level:
+```{r}
+students_adp = read.csv(file = 'data/students_adaptability_level_online_education.csv')
+ggplot(students_adp, aes(y=Class.Duration, fill=Adaptivity.Level)) +
+         geom_bar(position = "fill")  +
+          scale_fill_manual(values=c("#F0E68C","#FFA500","#FF6347"))+ 
+        labs(x = "Proportion", title = "Adaptation Level by Class Duration")
+
+```
+```{r , echo=FALSE}
+students_adp = read.csv(file = 'data/students_adaptability_level_online_education.csv')
+ggplot(students_adp, aes(y=Institution.Type, fill=Adaptivity.Level)) +
+         geom_bar(position = "fill")  +
+          scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9")) + 
+        labs(x = "Proportion", title = "Adaptation Level by Institution Type")
+
+```
+```{r , echo=FALSE}
+ggplot(students_adp, aes(y=Financial.Condition, fill=Adaptivity.Level)) +
+         geom_bar(position = "fill")  +
+          scale_fill_manual(values=c("#87CEEB", "#9370DB", "#FF69B4")) + 
+        labs(x = "Proportion", title = "Adaptation Level by Financial Condition")
+
+``` 
+```{r , echo=FALSE}
+ggplot(students_adp, aes(y=Class.Duration, fill=Adaptivity.Level)) +
+         geom_bar(position = "fill")  +
+          scale_fill_manual(values=c("#F0E68C","#FFA500","#FF6347"))+ 
+        labs(x = "Proportion", title = "Adaptation Level by Class Duration")
+
+```
+# Classification Tree Model for predicting Students adaptivity Level
+importing relevant packages
+```{r}
+#install.packages("rpart.plot")
+library(rpart)
+library(rpart.plot)
+```
+Fitting decision tree model
+```{r}
+set.seed(123)
+smp_size <- floor(0.75 * nrow(students_adp_nna))
+train_ind <- sample(seq_len(nrow(students_adp_nna)), size = smp_size)
+train <- students_adp_nna[train_ind, ]
+test_results <- students_adp_nna[-train_ind, ]
+test <- data.frame(Network.Type = test_results$Network.Type,Class.Duration = test_results$Class.Duration, Financial.Condition = test_results$Financial.Condition)
+
+fit <- rpart(Adaptivity.Level ~ Network.Type+Class.Duration+Financial.Condition, data = train, method = 'class')
+rpart.plot(fit)
+
+pred_result <- rpart.predict(fit, newdata = test,type="vector")
+exp_result <- test_results$Adaptivity.Level
+```
+Evaluating the model
+```{r}
+cm = as.matrix(table(Actucal = exp_result, Predicted = pred_result))
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class 
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted classes
+
+
+accuracy = sum(diag) / n
+precision = diag / colsums 
+recall = diag / rowsums 
+f1 = 2 * precision * recall / (precision + recall)
+
+matrices = data.frame(accuracy, precision, recall, f1)
+rownames(matrices) <- c("Low", "Moderate", "High")
+matrices
+```
+## Source code
+
+```{r, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+
+```
